@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>yED GraphML Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container">
+        <h1>yEd GraphML Generator</h1>
+        <details>
+            <summary>Help</summary>
+            <h2>How to use</h2>
+            <ol>
+                <li>Paste your Graph edge list in the input section</li>
+                <li>Click download</li>
+                <li>Open file with <a href="https://www.yworks.com/products/yed/download">yEd</a></li>
+                <li>Auto-generate a layout from the toolbar</li>
+            </ol>
+            <h2>Graph edge list format</h2>
+            <ul>
+                <li>Each edge goes on a separate line</li>
+                <li>Edge data is a comma separated list of <code>FROM,TO,WEIGHT</code></li>
+                <li>Data entries can be any alphanumeric string and include spaces</li>
+                <li>Nodes / vertices are automatically generated from the list of edges</li>
+            </ul>
+        </details>
+        <h2>Input</h2>
+        <textarea class="input input-primary" name="" id="input" cols="30" rows="10" placeholder="A,B,1
+B,C,2
+A,C,3"></textarea>
+        <div>
+            <button class="btn btn-success" onclick="generateFromInput()">Generate</button>
+            <button class="btn btn-warning" onclick="downloadFromOutput()">Download</button>
+        </div>
+        <textarea class="secondary" name="" id="output" cols="30" rows="1" placeholder="Output XML"></textarea>
+        <footer>
+            by glitchdetector, for 2ADS101
+        </footer>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script>
+        var format = function (str, col) {
+            col = typeof col === 'object' ? col : Array.prototype.slice.call(arguments, 1);
+
+            return str.replace(/\{\{|\}\}|\{(\w+)\}/g, function (m, n) {
+                if (m == "{{") { return "{"; }
+                if (m == "}}") { return "}"; }
+                return col[n];
+            });
+        };
+        let tDocument = [
+`<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:java="http://www.yworks.com/xml/yfiles-common/1.0/java" xmlns:sys="http://www.yworks.com/xml/yfiles-common/markup/primitives/2.0" xmlns:x="http://www.yworks.com/xml/yfiles-common/markup/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
+<!--Created by yEd 3.22-->
+<key attr.name="Description" attr.type="string" for="graph" id="d0"/>
+<key for="port" id="d1" yfiles.type="portgraphics"/>
+<key for="port" id="d2" yfiles.type="portgeometry"/>
+<key for="port" id="d3" yfiles.type="portuserdata"/>
+<key attr.name="url" attr.type="string" for="node" id="d4"/>
+<key attr.name="description" attr.type="string" for="node" id="d5"/>
+<key for="node" id="d6" yfiles.type="nodegraphics"/>
+<key for="graphml" id="d7" yfiles.type="resources"/>
+<key attr.name="url" attr.type="string" for="edge" id="d8"/>
+<key attr.name="description" attr.type="string" for="edge" id="d9"/>
+<key for="edge" id="d10" yfiles.type="edgegraphics"/> 
+<graph edgedefault="directed" id="G">
+<data key="d0"/>`,
+`<data key="d7">
+<y:Resources/>
+</data>
+</graph>
+</graphml>`,
+        ]
+        let tNode = `
+<node id="n{0}">
+<data key="d5"/>
+<data key="d6">
+<y:ShapeNode>
+<y:Geometry height="30.0" width="{2}" x="373.6751999999997" y="383.8048"/>
+<y:Fill color="#FFCC00" transparent="false"/>
+<y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
+<y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="12.00390625" x="8.998046875" xml:space="preserve" y="5.6494140625">{1}<y:LabelModel><y:SmartNodeLabelModel distance="4.0"/></y:LabelModel><y:ModelParameter><y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/></y:ModelParameter></y:NodeLabel>
+<y:Shape type="rectangle"/>
+</y:ShapeNode>
+</data>
+</node>
+`
+        let tEdge = `
+<edge id="e{0}" source="n{1}" target="n{2}">
+<data key="d10">
+<y:PolyLineEdge>
+<y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+<y:LineStyle color="#{3}" type="dashed" width="2.0"/>
+<y:Arrows source="none" target="none"/>
+<y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" configuration="AutoFlippingLabel" distance="0.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="three_center" modelPosition="center" ratio="0.5" textColor="#{3}" verticalTextPosition="bottom" visible="true" width="10.673828125" x="25.2201231933592" xml:space="preserve" y="-28.872532861328125">{4}<y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="relative_to_edge_flow" angleRotationOnRightSide="co" distance="-1.0" placement="center" side="left|right" sideReference="relative_to_edge_flow"/></y:EdgeLabel>
+<y:BendStyle smoothed="true"/>
+</y:PolyLineEdge>
+</data>
+</edge>
+`
+
+        function generateDocument(edges) {
+            let nodes = edges.map(e => [e[0], e[1]]).flat().filter((v, i, a) => a.indexOf(v) === i)
+            let tEdges = edges.map(e => format(tEdge, `${e[0]}_${e[1]}`, e[0], e[1], e[3] || "000000", e[2])).join('\n')
+            let wPerChar = 7;
+            let margin = 15;
+            let minW = 30;
+            let tNodes = nodes.map(n => format(tNode, `${n}`, n, Math.max(minW, `${n}`.length * wPerChar + margin))).join('\n')
+            
+            return [tDocument[0], tEdges, tNodes, tDocument[1]].join('\n')
+        }
+
+        function generateFromInput() {
+            let input = document.getElementById("input").value
+            let edges = input.split('\n').filter(e => e !== "").map(e => e.split(','))
+            let output = generateDocument(edges)
+            document.getElementById("output").value = output
+        }
+
+        function downloadFromOutput() {
+            generateFromInput();
+            var textToWrite = document.getElementById("output").value;
+            var textFileAsBlob = new Blob([textToWrite], { type: 'text/plain' });
+            var fileNameToSaveAs = "graph.graphml";
+            var downloadLink = document.createElement("a");
+            downloadLink.download = fileNameToSaveAs;
+            downloadLink.innerHTML = "My Hidden Link";
+            window.URL = window.URL || window.webkitURL;
+            downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+        }
+    </script>
+</body>
+</html>
